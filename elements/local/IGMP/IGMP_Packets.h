@@ -6,7 +6,7 @@ struct MembershipQuery {
     uint8_t Type;
     uint8_t Max_respond_code;
     uint16_t Checksum;
-    struct in_addr group_addr;
+    uint32_t group_addr;
 
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     unsigned Resv:4;

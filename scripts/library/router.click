@@ -112,4 +112,11 @@ elementclass Router {
 	client2_ipgw[1]  -> ICMPError($client2_address, parameterproblem) -> rt;
 	client2_ttl[1]   -> ICMPError($client2_address, timeexceeded) -> rt;
 	client2_frag[1]  -> ICMPError($client2_address, unreachable, needfrag) -> rt;
+
+	genQuery1 :: RouterGeneralQuerySender(router_server_network_address, 224.0.0.1)
+	genQuery1 ->[0]output
+	genQuery2 :: RouterGeneralQuerySender(router_client_network1_address, 224.0.0.1)
+	genQuery2 ->[1]output
+	genQuery3 :: RouterGeneralQuerySender(router_client_network2_address, 224.0.0.1)
+	genQuery3 ->[2]output
 }
