@@ -19,7 +19,8 @@ int RouterGeneralQuerySender::configure(Vector<String> &conf, ErrorHandler *errh
 
     Timer *timer = new Timer(this);
     timer->initialize(this);
-    timer->schedule_after_msec(_time);
+    timer->schedule_after_msec(0);
+click_chatter("Init");
 	return 0;
 }
 
@@ -75,6 +76,7 @@ Packet *RouterGeneralQuerySender::make_packet() {
 }
 
 void RouterGeneralQuerySender::run_timer(Timer *timer) {
+click_chatter("Got a packet");
     if (Packet * q = make_packet()) {
         output(0).push(q);
         timer->reschedule_after_msec(_time);
