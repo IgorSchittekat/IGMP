@@ -32,7 +32,7 @@ Packet *MembershipReportSender::make_packet() {
     }
 
     int size = sizeof(click_ip) + sizeof(MembershipReport) + sizeof(GroupRecord) * numberOfGroupRecords +
-               numberOfGroupRecords * numberOfSourceAdresses * sizeof(in_addr) + sizeof(ra);
+               numberOfGroupRecords * numberOfSourceAdresses * sizeof(in_addr) + sizeof(RouterAlert);
 
     WritablePacket *q = Packet::make(headroom, 0, size, 0);
     if (q == 0) {
@@ -64,7 +64,7 @@ Packet *MembershipReportSender::make_packet() {
     auto addr = (GroupRecord *) (mr + 1);
 
     for (int i = 0; i < numberOfGroupRecords; i++) {
-        addr->Record_Type = MODE_IS_EXCLUDE;
+        addr->Record_Type = IGMP_MODE_IS_EXCLUDE;
         addr->N = htons(numberOfSourceAdresses);
         addr->auxDataLen = 0;
         addr->MulticastAddres = ip_addr;
