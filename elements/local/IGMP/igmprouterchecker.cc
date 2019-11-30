@@ -13,11 +13,13 @@ IgmpRouterChecker::IgmpRouterChecker() {}
 IgmpRouterChecker::~ IgmpRouterChecker() {}
 
 int IgmpRouterChecker::configure(Vector <String> &conf, ErrorHandler *errh) {
-    if (Args(conf, this, errh).complete() < 0) return -1;
+    int res = cp_va_kparse(conf, this, errh,
+         "ROUTER", 0, cpElementCast, "IgmpRouter", router,
+    cpEnd);
     return 0;
 }
 
-void IgmpRouterChecker::push(int, Packet * p) {
+void IgmpRouterChecker::push(int i, Packet * p) {
     click_chatter("packet in");
     WritablePacket* q = p->uniqueify();
     click_ether* eth = (click_ether *) q->data();
@@ -61,14 +63,30 @@ void IgmpRouterChecker::push(int, Packet * p) {
                     }
                     else if (rec->Record_Type == IGMP_CHANGE_TO_EXCLUDE_MODE) {
                         click_chatter("TO_EXC");
-                        
+                        IgmpRouter::State state;
+                        state.mult_addr = rec->MulticastAddres;
+                        IgmpRouter::SourceRecord srec;
+                        srec.src_addr = iph->ip_src;
+                        state.records.push_back(srec);
+                        router->states.push_back(state);
+                        q->kill();
                     }
                 }
             }
         }
     }
     else {
-        output(0).push(p);
+        if (i == 0) {
+            output(0).push(p);
+        }
+        else {
+            for (int i = 0; i < router->states.size(); i++) {
+                if (router->states[i].mult_addr == iph->ip_dst) {
+
+                    output(1).push(p);
+                }
+            }
+        }
     }
 }
 

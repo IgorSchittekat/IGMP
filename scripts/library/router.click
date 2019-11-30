@@ -17,6 +17,11 @@ AddressInfo(multicast_client_address 224.4.4.4 01:00:5e:00:00:01)
 elementclass Router {
 	$server_address, $client1_address, $client2_address |
 
+	router::IgmpRouter
+	netwerk0Checker::IgmpRouterChecker(router)
+	netwerk1Checker::IgmpRouterChecker(router)
+	netwerk2Checker::IgmpRouterChecker(router)
+
 	// Shared IP input path and routing table
 	ip :: Strip(14)
 		-> CheckIPHeader
@@ -33,19 +38,25 @@ elementclass Router {
 
 	// Input and output paths for interface 0
 	input[0]
+		-> netwerk0Checker
+	netwerk0Checker[0]
 		-> HostEtherFilter($server_address)
 		-> server_class :: Classifier(12/0806 20/0001, 12/0806 20/0002, -)
 		-> ARPResponder($server_address)
 		-> [0]output;
+	netwerk0Checker[1]
+		-> cp::CopyPacket
+	cp[0]  -> [1]output
+	cp[1]  -> [2]output
 
 	server_arpq :: ARPQuerier($server_address) -> output;
 	server_class[1] -> arpt[0] -> [1]server_arpq;
 	server_class[2] -> Paint(1) -> ip;
 
-
 	// Input and output paths for interface 1
 	input[1]
-		-> IgmpRouterChecker
+		-> [0]netwerk1Checker
+	netwerk1Checker[0]
 		-> HostEtherFilter($client1_address)
 		-> client1_class :: Classifier(12/0806 20/0001, 12/0806 20/0002, -)
 		-> ARPResponder($client1_address)
@@ -55,10 +66,9 @@ elementclass Router {
 	client1_class[1] -> arpt[1] -> [1]client1_arpq;
 	client1_class[2] -> Paint(2) -> ip;
 
-
 	// Input and output paths for interface 2
 	input[2]
-		-> IgmpRouterChecker
+		-> [0]netwerk2Checker
 		-> HostEtherFilter($client2_address)
 		-> client2_class :: Classifier(12/0806 20/0001, 12/0806 20/0002, -)
 		-> ARPResponder($client2_address)
