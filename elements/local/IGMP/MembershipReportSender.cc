@@ -67,7 +67,7 @@ Packet *MembershipReportSender::make_packet() {
         addr->Record_Type = IGMP_MODE_IS_EXCLUDE;
         addr->N = htons(numberOfSourceAdresses);
         addr->auxDataLen = 0;
-        addr->MulticastAddres = ip_addr;
+        addr->MulticastAddress = ip_addr;
         auto ip_addr = (in_addr * )(addr + 1);
         for (auto j : ip_list) {
             *ip_addr = j;

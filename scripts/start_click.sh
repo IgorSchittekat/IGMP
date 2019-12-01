@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cd /home/student/click/scripts/
+cd /media/sf_IGMP/scripts/
 
 #../userlevel/click glue.click &
 ../userlevel/click -p 10001 router.click &

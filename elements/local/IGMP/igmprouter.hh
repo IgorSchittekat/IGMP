@@ -2,6 +2,7 @@
 #define CLICK_IgmpRouter_HH
 
 #include <click/element.hh>
+#include <click/hashtable.hh>
 
 CLICK_DECLS
 
@@ -9,7 +10,7 @@ CLICK_DECLS
 enum filter_mode {INCLUDE, EXCLUDE};
 
 class IgmpRouter:  public Element {
-    public:
+private:
     struct SourceRecord {
         IPAddress src_addr;
         Timer src_timer;
@@ -18,7 +19,7 @@ class IgmpRouter:  public Element {
         IPAddress mult_addr;
         Timer timer;
         filter_mode filterMode;
-        Vector<SourceRecord> records;
+        Vector<SourceRecord> sources;
     };
 
 public:
@@ -30,16 +31,14 @@ public:
 
     const char *port_count() const { return "0/0"; }
 
-    const char *processing() const { return PUSH; }
+    const char *processing() const { return AGNOSTIC; }
 
     int configure(Vector <String> &, ErrorHandler *);
 
-    void push(int, Packet *);
-
-
-    Vector<State> states;
+    void add(IPAddress src, IPAddress mult_addr);
 
 private:
+    HashTable<IPAddress, Vector<IgmpRouter::State>*> statesMap;
 
 };
 

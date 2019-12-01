@@ -6,6 +6,10 @@
 
 CLICK_DECLS
 
+/**
+ * Input[0]: IGMP IP packets
+ */
+
 
 class IgmpRouterChecker:  public Element {
     
@@ -17,7 +21,7 @@ public:
 
     const char *class_name() const { return "IgmpRouterChecker"; }
 
-    const char *port_count() const { return "1-2/0-2"; }
+    const char *port_count() const { return "1/0"; }
 
     const char *processing() const { return PUSH; }
 
