@@ -4,7 +4,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/ether.h>
 #include <click/timer.hh>
-#include "igmprouter.hh"
+#include "IgmpRouter.hh"
 #include "IGMP_Packets.h"
 
 CLICK_DECLS
@@ -18,6 +18,18 @@ int IgmpRouter::configure(Vector <String> &conf, ErrorHandler *errh) {
 }
 
 
+bool IgmpRouter::multicastExists(IPAddress mult_addr) {
+    for (auto it = statesMap.begin(); it != statesMap.end(); it++) {
+        auto states = it->second;
+        for (auto itt = states->begin(); itt != states->end(); itt++) {
+            if (itt->mult_addr == mult_addr) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 
 void IgmpRouter::add(IPAddress client, IPAddress mult_addr) {
     if (statesMap.find(client) == statesMap.end()) {
@@ -27,8 +39,7 @@ void IgmpRouter::add(IPAddress client, IPAddress mult_addr) {
     Vector<IgmpRouter::State>* states = statesMap.get(client);
 
     bool exists = false;
-    Vector<IgmpRouter::State>::iterator it;
-    for (it = states->begin(); it != states->end(); it++) {
+    for (auto it = states->begin(); it != states->end(); it++) {
         if (it->mult_addr == mult_addr) {
             exists = true;
         }

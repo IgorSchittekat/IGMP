@@ -3,12 +3,13 @@
 
 #include <click/element.hh>
 #include <click/hashtable.hh>
+#include <click/timer.hh>
 
 CLICK_DECLS
 
-
 enum filter_mode {INCLUDE, EXCLUDE};
 
+class Timer;
 class IgmpRouter:  public Element {
 private:
     struct SourceRecord {
@@ -36,6 +37,8 @@ public:
     int configure(Vector <String> &, ErrorHandler *);
 
     void add(IPAddress src, IPAddress mult_addr);
+
+    bool multicastExists(IPAddress mult_addr);
 
 private:
     HashTable<IPAddress, Vector<IgmpRouter::State>*> statesMap;

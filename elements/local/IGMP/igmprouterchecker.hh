@@ -2,7 +2,7 @@
 #define CLICK_IGMPROUTERCHECKER_HH
 
 #include <click/element.hh>
-#include "igmprouter.hh"
+#include "IgmpRouter.hh"
 
 CLICK_DECLS
 

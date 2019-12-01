@@ -41,11 +41,14 @@ elementclass Router {
 	// Shared IP input path and routing table
 	ip :: Strip(14)
 		-> CheckIPHeader
-		-> igmp_class::IgmpClassifier;
+		-> igmp_class::IgmpClassifier(ROUTER router);
 
 	igmp_class[0]-> IgmpRouterChecker(ROUTER router);
-
 	igmp_class[1]
+		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_address:eth)
+		-> [1]output;
+
+	igmp_class[2]
 		-> rt :: StaticIPLookup(
 					$server_address:ip/32 0,
 					$client1_address:ip/32 0,
