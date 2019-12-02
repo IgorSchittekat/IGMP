@@ -16,13 +16,7 @@ IgmpClassifier::~ IgmpClassifier()
 {}
 
 int IgmpClassifier::configure(Vector<String> &conf, ErrorHandler *errh) {
-    IgmpRouter* r;
-    int res = cp_va_kparse(conf, this, errh,
-         "ROUTER", 0, cpElementCast, "IgmpRouter", &r,
-    cpEnd);
-    if(res < 0) return res;
-
-    router = r;
+    if (Args(conf, this, errh).complete() < 0) return -1;
 	return 0;
 }
 
@@ -32,11 +26,8 @@ void IgmpClassifier::push(int i, Packet * p) {
     if (iph->ip_p == IP_PROTO_IGMP) {
         output(0).push(p);
     }
-    else if (router->multicastExists(iph->ip_dst)) {
-        output(1).push(p);
-    }
     else {
-        output(2).push(p);
+        output(1).push(p);
     }
 }
 

@@ -36,6 +36,8 @@ public:
 
     int configure(Vector <String> &, ErrorHandler *);
 
+    bool acceptSource(IPAddress dest, IPAddress client, IPAddress client_mask);
+
     void add(IPAddress src, IPAddress mult_addr);
 
     bool multicastExists(IPAddress mult_addr);

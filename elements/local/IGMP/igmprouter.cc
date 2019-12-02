@@ -30,6 +30,21 @@ bool IgmpRouter::multicastExists(IPAddress mult_addr) {
     return false;
 }
 
+bool IgmpRouter::acceptSource(IPAddress dest, IPAddress client, IPAddress client_mask) {
+    for (auto it = statesMap.begin(); it != statesMap.end(); it++) {
+        if (it->first.matches_prefix(client, client_mask)) {
+            Vector<IgmpRouter::State>* states = it->second;
+            for (auto itt = states->begin(); itt != states->end(); itt++) {
+                click_chatter("mult: %d", itt->mult_addr);
+                if (itt->mult_addr == dest) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 
 void IgmpRouter::add(IPAddress client, IPAddress mult_addr) {
     if (statesMap.find(client) == statesMap.end()) {

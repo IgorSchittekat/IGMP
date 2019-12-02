@@ -36,19 +36,28 @@ elementclass Router {
 		-> EtherEncap(0x0800, router_client_network2_address:eth, multicast_server_address:eth)
 		->[2]output;
 
+	igmpCopy::Tee(2);
+	igmpCopy[0]
+		-> IgmpForwarder(ROUTER router, NET $client1_address:ipnet)
+		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_address:eth)
+		-> [1]output;
 
+	igmpCopy[1]
+		-> IgmpForwarder(ROUTER router, NET $client2_address:ipnet)
+		-> EtherEncap(0x0800, $client2_address:ether, multicast_client_address:eth)
+		-> [2]output;
 
 	// Shared IP input path and routing table
 	ip :: Strip(14)
 		-> CheckIPHeader
-		-> igmp_class::IgmpClassifier(ROUTER router);
+		-> igmp_class::IgmpClassifier()
+		-> IgmpRouterChecker(ROUTER router);
 
-	igmp_class[0]-> IgmpRouterChecker(ROUTER router);
-	igmp_class[1]
-		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_address:eth)
-		-> [1]output;
+	igmp_class[1] 
+		-> multi_class::IPClassifier(224/4, -)
+		-> igmpCopy;
 
-	igmp_class[2]
+	multi_class[1]
 		-> rt :: StaticIPLookup(
 					$server_address:ip/32 0,
 					$client1_address:ip/32 0,
