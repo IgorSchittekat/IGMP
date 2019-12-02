@@ -19,9 +19,9 @@ int IgmpRouter::configure(Vector <String> &conf, ErrorHandler *errh) {
 
 
 bool IgmpRouter::multicastExists(IPAddress mult_addr) {
-    for (auto it = statesMap.begin(); it != statesMap.end(); it++) {
-        auto states = it->second;
-        for (auto itt = states->begin(); itt != states->end(); itt++) {
+    for (auto it = groupsMap.begin(); it != groupsMap.end(); it++) {
+        auto groups = it->second;
+        for (auto itt = groups->begin(); itt != groups->end(); itt++) {
             if (itt->mult_addr == mult_addr) {
                 return true;
             }
@@ -31,13 +31,18 @@ bool IgmpRouter::multicastExists(IPAddress mult_addr) {
 }
 
 bool IgmpRouter::acceptSource(IPAddress dest, IPAddress client, IPAddress client_mask) {
-    for (auto it = statesMap.begin(); it != statesMap.end(); it++) {
+    for (auto it = groupsMap.begin(); it != groupsMap.end(); it++) {
         if (it->first.matches_prefix(client, client_mask)) {
-            Vector<IgmpRouter::State>* states = it->second;
-            for (auto itt = states->begin(); itt != states->end(); itt++) {
+            Vector<IgmpRouter::Group>* groups = it->second;
+            for (auto itt = groups->begin(); itt != groups->end(); itt++) {
                 click_chatter("mult: %d", itt->mult_addr);
                 if (itt->mult_addr == dest) {
-                    return true;
+                    if (itt->filterMode == EXCLUDE) {
+                            return true;
+                    }
+                    else if (itt->filterMode == INCLUDE) {
+                        return false;
+                    }
                 }
             }
         }
@@ -46,24 +51,47 @@ bool IgmpRouter::acceptSource(IPAddress dest, IPAddress client, IPAddress client
 }
 
 
-void IgmpRouter::add(IPAddress client, IPAddress mult_addr) {
-    if (statesMap.find(client) == statesMap.end()) {
-        Vector<IgmpRouter::State>* newStates = new Vector<IgmpRouter::State>();
-        statesMap.set(client, newStates);
+void IgmpRouter::toExclude(IPAddress client, IPAddress mult_addr) {
+    if (groupsMap.find(client) == groupsMap.end()) {
+        Vector<IgmpRouter::Group>* newGroups = new Vector<IgmpRouter::Group>();
+        groupsMap.set(client, newGroups);
     }
-    Vector<IgmpRouter::State>* states = statesMap.get(client);
+    Vector<IgmpRouter::Group>* groups = groupsMap.get(client);
 
     bool exists = false;
-    for (auto it = states->begin(); it != states->end(); it++) {
+    for (auto it = groups->begin(); it != groups->end(); it++) {
         if (it->mult_addr == mult_addr) {
             exists = true;
+            it->filterMode = EXCLUDE;
         }
     }
     if (!exists) {
-        IgmpRouter::State newState = {mult_addr, Timer(), INCLUDE, Vector<SourceRecord>()};
-        states->push_back(newState);
+        IgmpRouter::Group newGroup = {mult_addr, Timer(), EXCLUDE};
+        groups->push_back(newGroup);
     }
 }
+
+
+void IgmpRouter::toInclude(IPAddress client, IPAddress mult_addr) {
+    if (groupsMap.find(client) == groupsMap.end()) {
+        Vector<IgmpRouter::Group>* newGroups = new Vector<IgmpRouter::Group>();
+        groupsMap.set(client, newGroups);
+    }
+    Vector<IgmpRouter::Group>* groups = groupsMap.get(client);
+
+    bool exists = false;
+    for (auto it = groups->begin(); it != groups->end(); it++) {
+        if (it->mult_addr == mult_addr) {
+            exists = true;
+            it->filterMode = INCLUDE;
+        }
+    }
+    if (!exists) {
+        IgmpRouter::Group newGroup = {mult_addr, Timer(), INCLUDE};
+        groups->push_back(newGroup);
+    }
+}
+
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(IgmpRouter)

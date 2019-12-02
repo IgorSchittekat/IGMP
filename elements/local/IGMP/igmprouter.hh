@@ -12,15 +12,10 @@ enum filter_mode {INCLUDE, EXCLUDE};
 class Timer;
 class IgmpRouter:  public Element {
 private:
-    struct SourceRecord {
-        IPAddress src_addr;
-        Timer src_timer;
-    };
-    struct State {
+    struct Group {
         IPAddress mult_addr;
         Timer timer;
         filter_mode filterMode;
-        Vector<SourceRecord> sources;
     };
 
 public:
@@ -38,12 +33,14 @@ public:
 
     bool acceptSource(IPAddress dest, IPAddress client, IPAddress client_mask);
 
-    void add(IPAddress src, IPAddress mult_addr);
+    void toExclude(IPAddress src, IPAddress mult_addr);
+
+    void toInclude(IPAddress src, IPAddress mult_addr);
 
     bool multicastExists(IPAddress mult_addr);
 
 private:
-    HashTable<IPAddress, Vector<IgmpRouter::State>*> statesMap;
+    HashTable<IPAddress, Vector<IgmpRouter::Group>*> groupsMap;
 
 };
 
