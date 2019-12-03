@@ -2,10 +2,17 @@
 #define CLICK_IGMPROUTERCHECKER_HH
 
 #include <click/element.hh>
+#include "IgmpRouter.hh"
 
 CLICK_DECLS
 
+/**
+ * Input[0]: IGMP IP packets
+ */
+
+
 class IgmpRouterChecker:  public Element {
+    
 
 public:
     IgmpRouterChecker();
@@ -14,7 +21,7 @@ public:
 
     const char *class_name() const { return "IgmpRouterChecker"; }
 
-    const char *port_count() const { return "1/1"; }
+    const char *port_count() const { return "1/0"; }
 
     const char *processing() const { return PUSH; }
 
@@ -23,6 +30,7 @@ public:
     void push(int, Packet *);
 
 private:
+    IgmpRouter* router;
 };
 
 CLICK_ENDDECLS

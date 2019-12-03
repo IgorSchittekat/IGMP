@@ -50,7 +50,7 @@ struct GroupRecord {
     uint8_t Record_Type;
     uint8_t auxDataLen;
     uint16_t N;
-    in_addr MulticastAddres;
+    in_addr MulticastAddress;
 
     //in_addr source_addres[];
 };

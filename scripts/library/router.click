@@ -17,9 +17,47 @@ AddressInfo(multicast_client_address 224.4.4.4 01:00:5e:00:00:01)
 elementclass Router {
 	$server_address, $client1_address, $client2_address |
 
+	router::IgmpRouter();
+
+
+
+	genQuery1 :: RouterGeneralQuerySender(router_server_network_address, multicast_client_address)
+	genQuery1 
+		-> EtherEncap(0x0800, router_server_network_address:eth, multicast_server_address:eth)
+		-> [0]output;
+
+	genQuery2 :: RouterGeneralQuerySender(router_client_network1_address, multicast_client_address)
+	genQuery2 
+		-> EtherEncap(0x0800, router_client_network1_address:eth, multicast_client_address:eth)
+		->[1]output;
+
+	genQuery3 :: RouterGeneralQuerySender(router_client_network2_address, multicast_client_address)
+	genQuery3 
+		-> EtherEncap(0x0800, router_client_network2_address:eth, multicast_server_address:eth)
+		->[2]output;
+
+	igmpCopy::Tee(2);
+	igmpCopy[0]
+		-> IgmpForwarder(ROUTER router, NET $client1_address:ipnet)
+		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_address:eth)
+		-> [1]output;
+
+	igmpCopy[1]
+		-> IgmpForwarder(ROUTER router, NET $client2_address:ipnet)
+		-> EtherEncap(0x0800, $client2_address:ether, multicast_client_address:eth)
+		-> [2]output;
+
 	// Shared IP input path and routing table
 	ip :: Strip(14)
 		-> CheckIPHeader
+		-> igmp_class::IgmpClassifier()
+		-> IgmpRouterChecker(ROUTER router);
+
+	igmp_class[1] 
+		-> multi_class::IPClassifier(224/4, -)
+		-> igmpCopy;
+
+	multi_class[1]
 		-> rt :: StaticIPLookup(
 					$server_address:ip/32 0,
 					$client1_address:ip/32 0,
@@ -42,10 +80,8 @@ elementclass Router {
 	server_class[1] -> arpt[0] -> [1]server_arpq;
 	server_class[2] -> Paint(1) -> ip;
 
-
 	// Input and output paths for interface 1
 	input[1]
-		-> IgmpRouterChecker
 		-> HostEtherFilter($client1_address)
 		-> client1_class :: Classifier(12/0806 20/0001, 12/0806 20/0002, -)
 		-> ARPResponder($client1_address)
@@ -55,10 +91,8 @@ elementclass Router {
 	client1_class[1] -> arpt[1] -> [1]client1_arpq;
 	client1_class[2] -> Paint(2) -> ip;
 
-
 	// Input and output paths for interface 2
 	input[2]
-		-> IgmpRouterChecker
 		-> HostEtherFilter($client2_address)
 		-> client2_class :: Classifier(12/0806 20/0001, 12/0806 20/0002, -)
 		-> ARPResponder($client2_address)
@@ -116,19 +150,4 @@ elementclass Router {
 	client2_ipgw[1]  -> ICMPError($client2_address, parameterproblem) -> rt;
 	client2_ttl[1]   -> ICMPError($client2_address, timeexceeded) -> rt;
 	client2_frag[1]  -> ICMPError($client2_address, unreachable, needfrag) -> rt;
-
-	genQuery1 :: RouterGeneralQuerySender(router_server_network_address, multicast_client_address)
-	genQuery1 
-		-> EtherEncap(0x0800, router_server_network_address:eth, multicast_server_address:eth)
-		-> [0]output
-
-	genQuery2 :: RouterGeneralQuerySender(router_client_network1_address, multicast_client_address)
-	genQuery2 
-		-> EtherEncap(0x0800, router_client_network1_address:eth, multicast_client_address:eth)
-		->[1]output
-
-	genQuery3 :: RouterGeneralQuerySender(router_client_network2_address, multicast_client_address)
-	genQuery3 
-		-> EtherEncap(0x0800, router_client_network2_address:eth, multicast_server_address:eth)
-		->[2]output
 }
