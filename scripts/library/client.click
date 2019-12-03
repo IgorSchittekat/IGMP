@@ -36,4 +36,8 @@ elementclass Client {
 
 	in_cl[1] -> [1]arpq;
 	in_cl[2] -> ip;
+
+	igmp::MembershipReportSender(adress, multicast_server_address)
+		-> EtherEncap(0x0800, address:eth, multicast_server_address:eth)
+		-> [0]output
 }
