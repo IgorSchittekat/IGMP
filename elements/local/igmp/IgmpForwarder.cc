@@ -35,7 +35,6 @@ int IgmpForwarder::configure(Vector<String> &conf, ErrorHandler *errh) {
 
 void IgmpForwarder::push(int i, Packet * p) {
     const click_ip* iph = (click_ip *) p->ip_header();
-    click_chatter("%d", iph->ip_p);
     IPAddress destination = iph->ip_dst;
     if (router->acceptSource(destination, net_addr, net_mask)) {
         output(0).push(p);

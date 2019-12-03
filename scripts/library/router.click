@@ -23,7 +23,7 @@ elementclass Router {
 
 	genQuery1 :: RouterGeneralQuerySender(router_server_network_address, multicast_client_address)
 	genQuery1 
-		-> EtherEncap(0x0800, router_server_network_address:eth, multicast_server_address:eth)
+		-> EtherEncap(0x0800, router_server_network_address:eth, multicast_client_address:eth)
 		-> [0]output;
 
 	genQuery2 :: RouterGeneralQuerySender(router_client_network1_address, multicast_client_address)
@@ -33,7 +33,7 @@ elementclass Router {
 
 	genQuery3 :: RouterGeneralQuerySender(router_client_network2_address, multicast_client_address)
 	genQuery3 
-		-> EtherEncap(0x0800, router_client_network2_address:eth, multicast_server_address:eth)
+		-> EtherEncap(0x0800, router_client_network2_address:eth, multicast_client_address:eth)
 		->[2]output;
 
 	igmpCopy::Tee(2);

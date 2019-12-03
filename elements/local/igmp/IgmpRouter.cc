@@ -35,7 +35,6 @@ bool IgmpRouter::acceptSource(IPAddress dest, IPAddress client, IPAddress client
         if (it->first.matches_prefix(client, client_mask)) {
             Vector<IgmpRouter::Group>* groups = it->second;
             for (auto itt = groups->begin(); itt != groups->end(); itt++) {
-                click_chatter("mult: %d", itt->mult_addr);
                 if (itt->mult_addr == dest) {
                     if (itt->filterMode == EXCLUDE) {
                             return true;
