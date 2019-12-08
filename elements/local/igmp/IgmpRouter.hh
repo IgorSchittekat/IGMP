@@ -25,7 +25,7 @@ public:
 
     const char *class_name() const { return "IgmpRouter"; }
 
-    const char *port_count() const { return "0/0"; }
+    const char *port_count() const { return "0/0-1"; }
 
     const char *processing() const { return AGNOSTIC; }
 
@@ -38,6 +38,8 @@ public:
     void toInclude(IPAddress src, IPAddress mult_addr);
 
     bool multicastExists(IPAddress mult_addr);
+
+    void createGroupSpecificQuery(IPAddress client, IPAddress dest);
 
 private:
     HashTable<IPAddress, Vector<IgmpRouter::Group>*> groupsMap;

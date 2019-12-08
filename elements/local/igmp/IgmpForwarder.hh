@@ -7,6 +7,10 @@ CLICK_DECLS
 
 /**
  * Forwards packet if network asked for it
+ * Input[0]: Multicast traffic
+ * Input[1]: IGMP Group specific queries
+ * Output[0]: Multicast traffic
+ * Output[1]: IGMP Group specific queries
  */
 
 
@@ -16,7 +20,7 @@ public:
 	~IgmpForwarder();
 	
 	const char *class_name() const	{ return "IgmpForwarder"; }
-	const char *port_count() const	{ return "1/0-1"; }
+	const char *port_count() const	{ return "0-2/0-2"; }
 	const char *processing() const	{ return PUSH; }
 	int configure(Vector<String>&, ErrorHandler*);
 
