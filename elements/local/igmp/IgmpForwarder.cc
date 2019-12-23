@@ -16,8 +16,8 @@ IgmpForwarder::~ IgmpForwarder()
 {}
 
 int IgmpForwarder::configure(Vector<String> &conf, ErrorHandler *errh) {
-	IPAddress* addr = new IPAddress("1.1.1.1");
-	IPAddress* mask = new IPAddress("1.1.1.1");
+	IPAddress* addr = new IPAddress("0.0.0.0");
+	IPAddress* mask = new IPAddress("0.0.0.0");
     IgmpRouter* r;
     int res = cp_va_kparse(conf, this, errh, 
          "NET", 0, cpIPPrefix, addr, mask,

@@ -53,7 +53,7 @@ void IgmpRouterChecker::push(int, Packet * p) {
                     }
                     else if (rec->Record_Type == IGMP_MODE_IS_EXCLUDE) {
                         click_chatter("IS_EXC");
-                        
+                        router->isExclude(iph->ip_src, rec->MulticastAddress);
                     }
                     else if (rec->Record_Type == IGMP_CHANGE_TO_INCLUDE_MODE) {
                         click_chatter("TO_INC");

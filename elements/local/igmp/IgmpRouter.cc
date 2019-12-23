@@ -18,8 +18,20 @@ int IgmpRouter::configure(Vector <String> &conf, ErrorHandler *errh) {
     return 0;
 }
 
-void IgmpRouter::createGroupSpecificQuery(IPAddress temp_src, IPAddress dest) {
-    int headroom = sizeof(click_ether);
+void IgmpRouter::scheduleGroupSpecificQuery(Timer* t, void* v) {
+    TimerData* tData = (TimerData*) v;
+    tData->router->sendGroupSpecificQuery(tData->src, tData->dest, tData->sFlag);
+    if (tData->count-- > 0) {
+        t->schedule_after_sec(tData->router->getLMQI());
+    }
+    else {
+        delete t;
+        delete tData;
+    }
+}
+
+void IgmpRouter::sendGroupSpecificQuery(IPAddress temp_src, IPAddress dest, int s) {
+    int headroom = sizeof(click_ether) + 4;
     
     int size = sizeof(click_ip) + sizeof(MembershipQuery) + sizeof(RouterAlert);
 
@@ -54,8 +66,8 @@ void IgmpRouter::createGroupSpecificQuery(IPAddress temp_src, IPAddress dest) {
 	mq->Checksum = 0;
     mq->group_addr = dest;
 	mq->Resv = 0;
-	mq->S = 0;
-    mq->QRV = 2;
+	mq->S = s;
+    mq->QRV = getRobustnessVariable();
     mq->QQIC = 20;
     mq->NumberOfSources = 0;
 
@@ -68,12 +80,18 @@ void IgmpRouter::createGroupSpecificQuery(IPAddress temp_src, IPAddress dest) {
     output(0).push(q);
 }
 
+void IgmpRouter::timerCallback(Timer* t, void* v) {
+        click_chatter("Change to Incl");
+    IgmpRouter::Group* group = (IgmpRouter::Group*)v;
+    group->filterMode = INCLUDE;
+    click_chatter("Change to Incl");
+}
 
 bool IgmpRouter::multicastExists(IPAddress mult_addr) {
     for (auto it = groupsMap.begin(); it != groupsMap.end(); it++) {
         auto groups = it->second;
         for (auto itt = groups->begin(); itt != groups->end(); itt++) {
-            if (itt->mult_addr == mult_addr) {
+            if ((*itt)->mult_addr == mult_addr) {
                 return true;
             }
         }
@@ -84,13 +102,13 @@ bool IgmpRouter::multicastExists(IPAddress mult_addr) {
 bool IgmpRouter::acceptSource(IPAddress dest, IPAddress client, IPAddress client_mask) {
     for (auto it = groupsMap.begin(); it != groupsMap.end(); it++) {
         if (it->first.matches_prefix(client, client_mask)) {
-            Vector<IgmpRouter::Group>* groups = it->second;
+            Vector<IgmpRouter::Group*>* groups = it->second;
             for (auto itt = groups->begin(); itt != groups->end(); itt++) {
-                if (itt->mult_addr == dest) {
-                    if (itt->filterMode == EXCLUDE) {
+                if ((*itt)->mult_addr == dest) {
+                    if ((*itt)->filterMode == EXCLUDE) {
                         return true;
                     }
-                    else if (itt->filterMode == INCLUDE) {
+                    else if ((*itt)->filterMode == INCLUDE) {
                         return false;
                     }
                 }
@@ -100,49 +118,85 @@ bool IgmpRouter::acceptSource(IPAddress dest, IPAddress client, IPAddress client
     return false;
 }
 
-
-void IgmpRouter::toExclude(IPAddress client, IPAddress mult_addr) {
+void IgmpRouter::isExclude(IPAddress client, IPAddress mult_addr) {
     if (groupsMap.find(client) == groupsMap.end()) {
-        Vector<IgmpRouter::Group>* newGroups = new Vector<IgmpRouter::Group>();
+        Vector<IgmpRouter::Group*>* newGroups = new Vector<IgmpRouter::Group*>();
         groupsMap.set(client, newGroups);
     }
-    Vector<IgmpRouter::Group>* groups = groupsMap.get(client);
+    Vector<IgmpRouter::Group*>* groups = groupsMap.get(client);
 
     bool exists = false;
     for (auto it = groups->begin(); it != groups->end(); it++) {
-        if (it->mult_addr == mult_addr) {
+        if ((*it)->mult_addr == mult_addr) {
             exists = true;
-            it->filterMode = EXCLUDE;
+            (*it)->filterMode = EXCLUDE;
+            (*it)->timer->schedule_after_sec(getGroupMembershipInterval());
         }
     }
     if (!exists) {
-        IgmpRouter::Group newGroup = {mult_addr, Timer(), EXCLUDE};
+        Timer* t = new Timer(this);
+        IgmpRouter::Group* newGroup = new IgmpRouter::Group(mult_addr, t, EXCLUDE);
+        newGroup->timer->initialize(this);
+        newGroup->timer->assign(this->timerCallback, newGroup);
+        newGroup->timer->schedule_after_sec(getGroupMembershipInterval());
         groups->push_back(newGroup);
     }
+}
+
+void IgmpRouter::toExclude(IPAddress client, IPAddress mult_addr) {
+    if (groupsMap.find(client) == groupsMap.end()) {
+        Vector<IgmpRouter::Group*>* newGroups = new Vector<IgmpRouter::Group*>();
+        groupsMap.set(client, newGroups);
+    }
+    Vector<IgmpRouter::Group*>* groups = groupsMap.get(client);
+
+    bool exists = false;
+    for (auto it = groups->begin(); it != groups->end(); it++) {
+        if ((*it)->mult_addr == mult_addr) {
+            exists = true;
+            (*it)->filterMode = EXCLUDE;
+            (*it)->timer->schedule_after_sec(getGroupMembershipInterval());
+        }
+    }
+    if (!exists) {
+        Timer* t = new Timer(this);
+        IgmpRouter::Group* newGroup = new IgmpRouter::Group(mult_addr, t, EXCLUDE);
+        newGroup->timer->initialize(this);
+        newGroup->timer->assign(this->timerCallback, newGroup);
+        newGroup->timer->schedule_after_sec(getGroupMembershipInterval());
+        groups->push_back(newGroup);
+    }
+    s_map.set(client, 0);
 }
 
 
 void IgmpRouter::toInclude(IPAddress client, IPAddress mult_addr) {
-    click_chatter("%d, %d", client, mult_addr); //192.268.2.1, 224.4.4.4
-    if (groupsMap.find(client) == groupsMap.end()) {
-        Vector<IgmpRouter::Group>* newGroups = new Vector<IgmpRouter::Group>();
-        groupsMap.set(client, newGroups);
-    }
-    Vector<IgmpRouter::Group>* groups = groupsMap.get(client);
+    if (groupsMap.find(client) != groupsMap.end()) {
+        Vector<IgmpRouter::Group*>* groups = groupsMap.get(client);
 
-    bool exists = false;
-    for (auto it = groups->begin(); it != groups->end(); it++) {
-        if (it->mult_addr == mult_addr) {
-            exists = true;
-            it->filterMode = INCLUDE;
+        for (auto it = groups->begin(); it != groups->end(); it++) {
+            if ((*it)->mult_addr == mult_addr) {
+                (*it)->timer->schedule_after_sec(getLMQT());
+
+                int s;
+                if (s_map.find(client) == s_map.end()) {
+                    s = 0;
+                }
+                else {
+                    s = s_map.get(client);
+                }
+                TimerData* tData = new TimerData(client, mult_addr, this, this->getLMQC() - 1, s);
+                Timer* t = new Timer(this);
+                t->initialize(this);
+                t->assign(this->scheduleGroupSpecificQuery, tData);
+                t->schedule_now();
+                s_map.set(client, 1);
+            }
         }
     }
-    if (!exists) {
-        IgmpRouter::Group newGroup = {mult_addr, Timer(), INCLUDE};
-        groups->push_back(newGroup);
-    }
-    createGroupSpecificQuery(client, mult_addr);
 }
+
+
 
 
 CLICK_ENDDECLS

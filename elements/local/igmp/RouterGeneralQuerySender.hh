@@ -18,7 +18,10 @@ class RouterGeneralQuerySender : public Element {
     Packet *make_packet();
     in_addr src_addr;
     in_addr dst_addr;
-    int _time = 20000;
+    int _time = 20;
+	int id = 0;
+	int robust = 2;
+	int startup = robust - 1;
 };
 
 CLICK_ENDDECLS
