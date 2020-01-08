@@ -12,7 +12,7 @@
 //	[2]: packets sent to the 192.168.3.0/24 network
 //  [3]: packets destined for the router itself
 
-AddressInfo(multicast_client_address 224.0.0.1 01:00:5e:00:00:01)
+require(library definitions.click)
 
 elementclass Router {
 	$server_address, $client1_address, $client2_address |
