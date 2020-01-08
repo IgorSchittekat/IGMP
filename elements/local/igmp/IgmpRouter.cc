@@ -108,9 +108,6 @@ bool IgmpRouter::acceptSource(IPAddress dest, IPAddress client, IPAddress client
                     if ((*itt)->filterMode == EXCLUDE) {
                         return true;
                     }
-                    else if ((*itt)->filterMode == INCLUDE) {
-                        return false;
-                    }
                 }
             }
         }
