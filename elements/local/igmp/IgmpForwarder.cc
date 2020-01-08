@@ -16,8 +16,8 @@ IgmpForwarder::~ IgmpForwarder()
 {}
 
 int IgmpForwarder::configure(Vector<String> &conf, ErrorHandler *errh) {
-	IPAddress* addr = new IPAddress("1.1.1.1");
-	IPAddress* mask = new IPAddress("1.1.1.1");
+	IPAddress* addr = new IPAddress("0.0.0.0");
+	IPAddress* mask = new IPAddress("0.0.0.0");
     IgmpRouter* r;
     int res = cp_va_kparse(conf, this, errh, 
          "NET", 0, cpIPPrefix, addr, mask,
@@ -35,10 +35,17 @@ int IgmpForwarder::configure(Vector<String> &conf, ErrorHandler *errh) {
 
 void IgmpForwarder::push(int i, Packet * p) {
     const click_ip* iph = (click_ip *) p->ip_header();
-    click_chatter("%d", iph->ip_p);
-    IPAddress destination = iph->ip_dst;
-    if (router->acceptSource(destination, net_addr, net_mask)) {
-        output(0).push(p);
+    if (i == 0) {
+        IPAddress destination = iph->ip_dst;    
+        if (router->acceptSource(destination, net_addr, net_mask)) {
+            output(0).push(p);
+        }
+    }
+    else if (i == 1) {
+        IPAddress source = iph->ip_src;
+        if (source.matches_prefix(net_addr, net_mask)) {
+            output(1).push(p);
+        }
     }
     p->kill();
 

@@ -12,18 +12,33 @@
 //	[2]: packets sent to the 192.168.3.0/24 network
 //  [3]: packets destined for the router itself
 
-AddressInfo(multicast_client_address 224.4.4.4 01:00:5e:00:00:01)
+require(library definitions.click)
 
 elementclass Router {
 	$server_address, $client1_address, $client2_address |
 
-	router::IgmpRouter();
+	igmpCopyQuery::Tee(2);
+	router::IgmpRouter() -> igmpCopyQuery;
 
+	client1_forwarder::IgmpForwarder(ROUTER router, NET $client1_address:ipnet);
+	client2_forwarder::IgmpForwarder(ROUTER router, NET $client2_address:ipnet);
+
+	igmpCopyQuery[0]
+		-> [1]client1_forwarder[1]
+		-> FixIPSrc(router_client_network1_address)
+		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_address:eth)
+		-> [1]output;
+
+	igmpCopyQuery[1]
+		-> [1]client2_forwarder[1]
+		-> FixIPSrc(router_client_network2_address)
+		-> EtherEncap(0x0800, $client2_address:ether, multicast_client_address:eth)
+		-> [2]output;
 
 
 	genQuery1 :: RouterGeneralQuerySender(router_server_network_address, multicast_client_address)
 	genQuery1 
-		-> EtherEncap(0x0800, router_server_network_address:eth, multicast_server_address:eth)
+		-> EtherEncap(0x0800, router_server_network_address:eth, multicast_client_address:eth)
 		-> [0]output;
 
 	genQuery2 :: RouterGeneralQuerySender(router_client_network1_address, multicast_client_address)
@@ -33,17 +48,17 @@ elementclass Router {
 
 	genQuery3 :: RouterGeneralQuerySender(router_client_network2_address, multicast_client_address)
 	genQuery3 
-		-> EtherEncap(0x0800, router_client_network2_address:eth, multicast_server_address:eth)
+		-> EtherEncap(0x0800, router_client_network2_address:eth, multicast_client_address:eth)
 		->[2]output;
 
 	igmpCopy::Tee(2);
 	igmpCopy[0]
-		-> IgmpForwarder(ROUTER router, NET $client1_address:ipnet)
+		-> [0]client1_forwarder[0]
 		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_address:eth)
 		-> [1]output;
 
 	igmpCopy[1]
-		-> IgmpForwarder(ROUTER router, NET $client2_address:ipnet)
+		-> [0]client2_forwarder[0]
 		-> EtherEncap(0x0800, $client2_address:ether, multicast_client_address:eth)
 		-> [2]output;
 

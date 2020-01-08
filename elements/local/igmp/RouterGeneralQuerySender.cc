@@ -19,13 +19,13 @@ int RouterGeneralQuerySender::configure(Vector<String> &conf, ErrorHandler *errh
 
     Timer *timer = new Timer(this);
     timer->initialize(this);
-    timer->schedule_after_msec(0);
+    timer->schedule_now();
 	return 0;
 }
 
 
 Packet *RouterGeneralQuerySender::make_packet() {
-    int headroom = sizeof(click_ether);
+    int headroom = sizeof(click_ether) + 4;
     
     int size = sizeof(click_ip) + sizeof(MembershipQuery) + sizeof(RouterAlert);
 
@@ -39,7 +39,7 @@ Packet *RouterGeneralQuerySender::make_packet() {
     iph->ip_v = 4;
     iph->ip_hl = (sizeof(click_ip) + sizeof(RouterAlert)) >> 2;
     iph->ip_len = htons(q->length());
-    iph->ip_id = htons(0);
+    iph->ip_id = htons(id++);
     iph->ip_ttl = 1;
     iph->ip_p = IP_PROTO_IGMP;
     iph->ip_src = src_addr;
@@ -60,8 +60,8 @@ Packet *RouterGeneralQuerySender::make_packet() {
     mq->group_addr = 0;
 	mq->Resv = 0;
 	mq->S = 0;
-    mq->QRV = 2;
-    mq->QQIC = 20;
+    mq->QRV = robust;
+    mq->QQIC = _time;
     mq->NumberOfSources = 0;
 
 
@@ -77,7 +77,13 @@ Packet *RouterGeneralQuerySender::make_packet() {
 void RouterGeneralQuerySender::run_timer(Timer *timer) {
     if (Packet * q = make_packet()) {
         output(0).push(q);
-        timer->reschedule_after_msec(_time);
+    }
+    if (startup > 0) {
+        startup--;
+        timer->reschedule_after_sec(_time / 4);
+    }
+    else {
+        timer->reschedule_after_sec(_time);
     }
 }
 
