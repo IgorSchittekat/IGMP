@@ -54,12 +54,12 @@ elementclass Router {
 	igmpCopy::Tee(2);
 	igmpCopy[0]
 		-> [0]client1_forwarder[0]
-		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_address:eth)
+		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_ether:eth)
 		-> [1]output;
 
 	igmpCopy[1]
 		-> [0]client2_forwarder[0]
-		-> EtherEncap(0x0800, $client2_address:ether, multicast_client_address:eth)
+		-> EtherEncap(0x0800, $client2_address:ether, multicast_client_ether:eth)
 		-> [2]output;
 
 	// Shared IP input path and routing table

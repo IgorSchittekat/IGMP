@@ -6,3 +6,4 @@
 // packet and print this out.
 
 AddressInfo(multicast_client_address 224.0.0.1 01:00:5e:00:00:01)
+AddressInfo(multicast_client_ether 01:00:5e:04:04:04)

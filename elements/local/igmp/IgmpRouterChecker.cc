@@ -49,19 +49,15 @@ void IgmpRouterChecker::push(int, Packet * p) {
                 for (int i = 1; i <= M; i++) {
                     GroupRecord* rec = (GroupRecord*)(mr + i);
                     if (rec->Record_Type == IGMP_MODE_IS_INCLUDE) {
-                        click_chatter("IS_INC");
                     }
                     else if (rec->Record_Type == IGMP_MODE_IS_EXCLUDE) {
-                        click_chatter("IS_EXC");
                         router->isExclude(iph->ip_src, rec->MulticastAddress);
                     }
                     else if (rec->Record_Type == IGMP_CHANGE_TO_INCLUDE_MODE) {
-                        click_chatter("TO_INC");
                         router->toInclude(iph->ip_src, rec->MulticastAddress);
                         
                     }
                     else if (rec->Record_Type == IGMP_CHANGE_TO_EXCLUDE_MODE) {
-                        click_chatter("TO_EXC");
                         router->toExclude(iph->ip_src, rec->MulticastAddress);
                     }
                 }

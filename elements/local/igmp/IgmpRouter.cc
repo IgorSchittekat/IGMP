@@ -81,10 +81,8 @@ void IgmpRouter::sendGroupSpecificQuery(IPAddress temp_src, IPAddress dest, int 
 }
 
 void IgmpRouter::timerCallback(Timer* t, void* v) {
-        click_chatter("Change to Incl");
     IgmpRouter::Group* group = (IgmpRouter::Group*)v;
     group->filterMode = INCLUDE;
-    click_chatter("Change to Incl");
 }
 
 bool IgmpRouter::multicastExists(IPAddress mult_addr) {

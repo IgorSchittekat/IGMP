@@ -76,6 +76,9 @@ Packet *RouterGeneralQuerySender::make_packet() {
 
 void RouterGeneralQuerySender::run_timer(Timer *timer) {
     if (Packet * q = make_packet()) {
+        String network = IPAddress(src_addr).unparse();
+        network = network.substring(network.begin(), network.end() - 4);
+        click_chatter("\033[1;33mSending General Query Message on network %s.0/24\033[0m", network.c_str());
         output(0).push(q);
     }
     if (startup > 0) {
