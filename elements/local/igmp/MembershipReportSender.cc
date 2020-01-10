@@ -155,6 +155,3 @@ template class Vector<in_addr>;
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(MembershipReportSender)
-
-
-//write client21/igmp.join 1.2.3.4
