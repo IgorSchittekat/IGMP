@@ -94,22 +94,22 @@ void IGMPClientResponder::push(int port, Packet *p) {
 
 
 void IGMPClientResponder::run_timer(Timer *timer) {
-//     if(records.size() > 0 && timer == generalTimer){
-//         //click_chatter("Timer");
-//         output(1).push(make_packet());
-//         //records.clear();
-//     } else if(timer != generalTimer){
-//         auto item = ressends.find(timer);
-//         output(1).push(item->second.first->clone()->uniqueify());
-//         if(item->second.second - 1 == 0){
-//             ressends.erase(item);
-//         }else{
-//             auto num = click_random(1, 1 * 1000);
-//             timer->reschedule_after_msec(num);
-//             item->second.second--;
-//         }
-//     }
-//     //timer->reschedule_after_msec(_time);
+    if(records.size() > 0 && timer == generalTimer){
+        //click_chatter("Timer");
+        output(1).push(make_packet());
+        //records.clear();
+    } else if(timer != generalTimer){
+        auto item = ressends.find(timer);
+        output(1).push(item->second.first->clone()->uniqueify());
+        if(item->second.second - 1 == 0){
+            ressends.erase(item);
+        }else{
+            auto num = click_random(1, 1 * 1000);
+            timer->reschedule_after_msec(num);
+            item->second.second--;
+        }
+    }
+    //timer->reschedule_after_msec(_time);
 }
 
 Packet *IGMPClientResponder::make_packet() {

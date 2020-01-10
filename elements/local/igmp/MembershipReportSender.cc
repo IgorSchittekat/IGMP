@@ -25,9 +25,9 @@ int MembershipReportSender::configure(Vector <String> &conf, ErrorHandler *errh)
 
 
 void MembershipReportSender::run_timer(Timer *timer) {
-    click_chatter("Got a packet");
-    output(0).push(storedPacket);
-    timer->reschedule_after_msec(_time);
+    // click_chatter("Got a packet");
+    // output(0).push(storedPacket);
+    // timer->reschedule_after_msec(_time);
 
 }
 
