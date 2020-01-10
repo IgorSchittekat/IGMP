@@ -23,15 +23,15 @@ elementclass Client {
 		-> output;
 
 	igmpClient::IGMPClientResponder($address)
-		->frag
+		->Discard;
 
 	ip :: Strip(14)
 		-> CheckIPHeader()
-		-> [1]igmpClient
+		-> [1]igmpClient;
 
 	igmpClient[1]
 		-> EtherEncap(0x0800, $address:ether, multicast_broadcast_router:eth)
-		->[0]output
+		->[0]output;
 
 	igmpClient[2]
 		->rt
@@ -54,5 +54,5 @@ elementclass Client {
 	igmp::MembershipReportSender($address)
 		-> SetIPChecksum()
 		-> SetIGMPChecksum()
-		-> igmpClient
+		-> igmpClient;
 }
