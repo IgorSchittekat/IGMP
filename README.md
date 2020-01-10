@@ -17,7 +17,6 @@ File                                | Description
 `IGMPDIR/MembershipReportSender`    | Controls the handlers for join and leave messages
 `IGMPDIR/RouterGeneralQuerySender`  | Periodically sends General Query Messages
 `IGMPDIR/SetIGMPChecksum`           | Set the checksum of the IGMP packet
-
 `LIBRARYDIR/client.click`           | click script for the client
 `LIBRARYDIR/router.click`           | click script for the router
 `LIBRARYDIR/server.click`           | click script for the server
