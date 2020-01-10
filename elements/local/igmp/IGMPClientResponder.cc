@@ -84,7 +84,10 @@ void IGMPClientResponder::push(int port, Packet *p) {
         }
         else{
             auto iph = (click_ip *) p->data();
-            if(timers.count(iph->ip_dst) == 1){
+            IPAddress t = iph->ip_dst;
+            click_chatter(t.unparse().c_str());
+            if(timers.count(iph->ip_dst) != 0){
+                click_chatter("accept");
                 output(2).push(p);
             }
             output(0).push(p);
