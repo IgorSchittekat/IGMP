@@ -23,7 +23,7 @@ int IGMPClientResponder::configure(Vector <String> &conf, ErrorHandler *errh) {
 void IGMPClientResponder::push(int port, Packet *p) {
     //click_chatter("Got a packet of size %d , on port %d", p->length(), port);
     if (port == 0) {
-        click_chatter("state change");
+        //click_chatter("state change");
         auto iph = (click_ip *) p->data();
         auto ra = (RouterAlert *) (iph + 1);
         auto mr = (MembershipReport *) (ra + 1);
@@ -35,22 +35,32 @@ void IGMPClientResponder::push(int port, Packet *p) {
             newrec->auxDataLen = rec->auxDataLen;
             newrec->Record_Type = rec->Record_Type;
             newrec->MulticastAddress = rec->MulticastAddress;
-            if(rec->Record_Type == IGMP_CHANGE_TO_EXCLUDE_MODE && this->timers.count(rec->MulticastAddress) == 0){
-                newrec->Record_Type == IGMP_MODE_IS_EXCLUDE;
-                Timer *timer = new Timer(this);
-                timer->initialize(this);
-                auto num = click_random(1, 1 * 1000);
-                timer->reschedule_after_msec(num);
-                timers.find_insert(rec->MulticastAddress, timer);
+            if(rec->Record_Type == IGMP_CHANGE_TO_EXCLUDE_MODE && timers.count(rec->MulticastAddress) == 0){
+
                 if(QRV-1 > 0){
+                    Timer *timer = new Timer(this);
+                    timer->initialize(this);
+                    auto num = click_random(1, 1 * 1000);
+                    //click_chatter("timer : %d", num);
+                    timer->schedule_after_msec(num);
+                    timers.find_insert(rec->MulticastAddress, timer);
                     Pair<Packet*, int> pair;
                     pair.first = p->clone()->uniqueify();
                     pair.second = QRV-1;
                     ressends.find_insert(timer, pair);
                 }
-            }else if {
-                //TODO: copy what i did with exclude
+            }else if(rec->Record_Type == IGMP_CHANGE_TO_INCLUDE_MODE && timers.count(rec->MulticastAddress) == 1) {
                 timers.erase(rec->MulticastAddress);
+                Timer *timer = new Timer(this);
+                timer->initialize(this);
+                auto num = click_random(1, 1 * 1000);
+                //click_chatter("timer : %d", num);
+                timer->schedule_after_msec(num);
+                timers.find_insert(rec->MulticastAddress, timer);
+                Pair<Packet*, int> pair;
+                pair.first = p->clone()->uniqueify();
+                pair.second = QRV-1;
+                ressends.find_insert(timer, pair);
             }
             records.push_back(newrec);
             rec = (GroupRecord*)rec + 1;
@@ -60,19 +70,24 @@ void IGMPClientResponder::push(int port, Packet *p) {
         //click_chatter("recieved packet");
         auto iph = (click_ip *) p->data();
         if(iph->ip_p == IP_PROTO_IGMP){
-            //TODO: change ID
+            iph->ip_id++;
             //click_chatter("responding");
             auto ra = (RouterAlert *) (iph + 1);
             auto mr = (MembershipQuery *) (ra + 1);
-            auto num = click_random(1, mr->Max_respond_code * 1000);
+            auto num = click_random(1, mr->Max_respond_code * 100);
             //click_chatter("test");
             if(!generalTimer->initialized()){
                 generalTimer->initialize(this);
             }
-            generalTimer->reschedule_after_msec(num);
+            //click_chatter("generalTimer : %d", num);
+            generalTimer->schedule_after_msec(num);
         }
         else{
-            output(2).push(p);
+            auto iph = (click_ip *) p->data();
+            if(timers.count(iph->ip_dst) == 1){
+                output(2).push(p);
+            }
+            output(0).push(p);
         }
     }
 }
@@ -134,7 +149,7 @@ Packet *IGMPClientResponder::make_packet() {
     for (auto i = records.begin(); i < records.end(); i++) {
         auto t = *i;
         addr->MulticastAddress = t->MulticastAddress;
-        addr->Record_Type = t->Record_Type;
+        addr->Record_Type = IGMP_MODE_IS_EXCLUDE;
         addr->auxDataLen = t->auxDataLen;
         addr->N = t->N;
         addr = (GroupRecord *) addr + 1;
