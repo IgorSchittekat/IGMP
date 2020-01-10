@@ -10,7 +10,6 @@
 
 
 IGMPClientResponder::IGMPClientResponder() {
-    generalTimer = new Timer(this);
 }
 
 IGMPClientResponder::~IGMPClientResponder() {}
@@ -49,6 +48,7 @@ void IGMPClientResponder::push(int port, Packet *p) {
                     pair.second = QRV-1;
                     ressends.find_insert(timer, pair);
                 }
+                records.push_back(newrec);
             }else if(rec->Record_Type == IGMP_CHANGE_TO_INCLUDE_MODE && timers.count(rec->MulticastAddress) == 1) {
                 timers.erase(rec->MulticastAddress);
                 Timer *timer = new Timer(this);
@@ -61,8 +61,16 @@ void IGMPClientResponder::push(int port, Packet *p) {
                 pair.first = p->clone()->uniqueify();
                 pair.second = QRV-1;
                 ressends.find_insert(timer, pair);
+                for (auto it = records.begin(); it != records.end(); ) {
+                    GroupRecord* deleterec= *it;
+                    if (deleterec->MulticastAddress == rec->MulticastAddress) {
+                        it = records.erase(it);
+                    }
+                    else {
+                        it++;
+                    }
+                }
             }
-            records.push_back(newrec);
             rec = (GroupRecord*)rec + 1;
         }
         output(1).push(p);
@@ -73,18 +81,28 @@ void IGMPClientResponder::push(int port, Packet *p) {
             iph->ip_id++;
             //click_chatter("responding");
             auto ra = (RouterAlert *) (iph + 1);
-            auto mr = (MembershipQuery *) (ra + 1);
-            auto num = click_random(1, mr->Max_respond_code * 100);
-            //click_chatter("test");
-            if(!generalTimer->initialized()){
-                generalTimer->initialize(this);
+            auto mq = (MembershipQuery *) (ra + 1);
+            if (mq->Type == IGMP_QUERY_TYPE) {
+                uint16_t checksum = mq->Checksum;
+                mq->Checksum = 0;
+                // check is checksum is correct
+                if (checksum == click_in_cksum((unsigned char *) mq, p->length() - sizeof(click_ip) - sizeof(RouterAlert) )) {
+                    auto num = click_random(1, mq->Max_respond_code * 100);
+                    //click_chatter("test");
+                    Timer* generalTimer = new Timer(this);
+                    generalTimer->initialize(this);
+                    generalTimer->assign(this->timerCallback, this);
+                    click_chatter("generalTimer : %d", num);
+                    generalTimer->schedule_after_msec(num);
+                }
             }
-            //click_chatter("generalTimer : %d", num);
-            generalTimer->schedule_after_msec(num);
         }
         else{
             auto iph = (click_ip *) p->data();
-            if(timers.count(iph->ip_dst) == 1){
+            IPAddress t = iph->ip_dst;
+            click_chatter(t.unparse().c_str());
+            if(timers.count(iph->ip_dst) != 0){
+                click_chatter("accept");
                 output(2).push(p);
             }
             output(0).push(p);
@@ -92,24 +110,33 @@ void IGMPClientResponder::push(int port, Packet *p) {
     }
 }
 
+void IGMPClientResponder::timerCallback(Timer* t, void* v) {
+    IGMPClientResponder* resp = (IGMPClientResponder*)v;
+    if(resp->records.size() > 0) {
+        resp->output(1).push(resp->make_packet());
+    }
+    delete t;
+}
+
 
 void IGMPClientResponder::run_timer(Timer *timer) {
-    if(records.size() > 0 && timer == generalTimer){
-        //click_chatter("Timer");
-        output(1).push(make_packet());
-        //records.clear();
-    } else if(timer != generalTimer){
-        auto item = ressends.find(timer);
-        output(1).push(item->second.first->clone()->uniqueify());
-        if(item->second.second - 1 == 0){
-            ressends.erase(item);
-        }else{
-            auto num = click_random(1, 1 * 1000);
-            timer->reschedule_after_msec(num);
-            item->second.second--;
-        }
-    }
-    //timer->reschedule_after_msec(_time);
+
+    //  if(records.size() > 0 && timer == generalTimer){
+         //click_chatter("Timer");
+        //  output(1).push(make_packet());
+         //records.clear();
+    //  } else if(timer != generalTimer){
+         auto item = ressends.find(timer);
+         output(1).push(item->second.first->clone()->uniqueify());
+         if(item->second.second - 1 == 0){
+             ressends.erase(item);
+         }else{
+             auto num = click_random(1, 1 * 1000);
+             timer->reschedule_after_msec(num);
+             item->second.second--;
+         }
+    //  }
+     //timer->reschedule_after_msec(_time);
 }
 
 Packet *IGMPClientResponder::make_packet() {

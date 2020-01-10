@@ -30,6 +30,8 @@ public:
     void push(int, Packet*);
 
     void run_timer(Timer*);
+
+    static void timerCallback(Timer* t, void* v);
 private:
     Packet* make_packet();
     HashTable<IPAddress, Timer*> timers;
@@ -39,7 +41,6 @@ private:
     IPAddress ip_addr = IPAddress("0.0.0.0");
     IPAddress dst_addr = IPAddress("224.0.0.22");
 
-    Timer* generalTimer;
 
     int QRV = 2;
 
