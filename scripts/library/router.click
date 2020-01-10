@@ -36,30 +36,30 @@ elementclass Router {
 		-> [2]output;
 
 
-	genQuery1 :: RouterGeneralQuerySender(router_server_network_address, multicast_client_address)
+	genQuery1 :: RouterGeneralQuerySender(router_server_network_address, multicast_broadcast_address)
 	genQuery1 
-		-> EtherEncap(0x0800, router_server_network_address:eth, multicast_client_address:eth)
+		-> EtherEncap(0x0800, router_server_network_address:eth, multicast_broadcast_address:eth)
 		-> [0]output;
 
-	genQuery2 :: RouterGeneralQuerySender(router_client_network1_address, multicast_client_address)
+	genQuery2 :: RouterGeneralQuerySender(router_client_network1_address, multicast_broadcast_address)
 	genQuery2 
-		-> EtherEncap(0x0800, router_client_network1_address:eth, multicast_client_address:eth)
+		-> EtherEncap(0x0800, router_client_network1_address:eth, multicast_broadcast_address:eth)
 		->[1]output;
 
-	genQuery3 :: RouterGeneralQuerySender(router_client_network2_address, multicast_client_address)
+	genQuery3 :: RouterGeneralQuerySender(router_client_network2_address, multicast_broadcast_address)
 	genQuery3 
-		-> EtherEncap(0x0800, router_client_network2_address:eth, multicast_client_address:eth)
+		-> EtherEncap(0x0800, router_client_network2_address:eth, multicast_broadcast_address:eth)
 		->[2]output;
 
 	igmpCopy::Tee(2);
 	igmpCopy[0]
 		-> [0]client1_forwarder[0]
-		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_ether:eth)
+		-> EtherEncap(0x0800, $client1_address:ether, multicast_client_address:eth)
 		-> [1]output;
 
 	igmpCopy[1]
 		-> [0]client2_forwarder[0]
-		-> EtherEncap(0x0800, $client2_address:ether, multicast_client_ether:eth)
+		-> EtherEncap(0x0800, $client2_address:ether, multicast_client_address:eth)
 		-> [2]output;
 
 	// Shared IP input path and routing table

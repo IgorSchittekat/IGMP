@@ -3,6 +3,8 @@
 // Packets for the network are put on output 0
 // Packets for the host are put on output 1
 
+require(library definitions.click)
+
 elementclass Client {
 	$address, $gateway |
 
@@ -28,7 +30,7 @@ elementclass Client {
 		-> [1]igmpClient
 
 	igmpClient[1]
-		-> EtherEncap(0x0800, 1A:7C:3E:90:78:43, 1A:7C:3E:90:78:44)
+		-> EtherEncap(0x0800, $address:ether, multicast_broadcast_router:eth)
 		->[0]output
 
 	igmpClient[2]
