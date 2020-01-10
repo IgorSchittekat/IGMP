@@ -6,15 +6,12 @@
 elementclass Client {
 	$address, $gateway |
 
-	ip :: Strip(14)
-		-> CheckIPHeader()
-		-> rt :: StaticIPLookup(
-					$address:ip/32 0,
-					$address:ipnet 0,
-					0.0.0.0/0.0.0.0 $gateway 1)
-		-> [1]output;
+
 	
-	rt[1]
+	rt :: StaticIPLookup(
+                  					$address:ip/32 0,
+                  					$address:ipnet 0,
+                  					0.0.0.0/0.0.0.0 $gateway 1)[1]
 		-> DropBroadcasts
 		-> ipgw :: IPGWOptions($address)
 		-> FixIPSrc($address)
@@ -22,6 +19,21 @@ elementclass Client {
 		-> frag :: IPFragmenter(1500)
 		-> arpq :: ARPQuerier($address)
 		-> output;
+
+	igmpClient::IGMPClientResponder($address)
+		->frag
+
+	ip :: Strip(14)
+		-> CheckIPHeader()
+		-> [1]igmpClient
+
+	igmpClient[1]
+		-> EtherEncap(0x0800, 1A:7C:3E:90:78:43, 1A:7C:3E:90:78:44)
+		->[0]output
+
+	igmpClient[2]
+		->rt
+		-> [1]output;
 
 	ipgw[1] -> ICMPError($address, parameterproblem) -> output;
 	ttl[1]  -> ICMPError($address, timeexceeded) -> output;
@@ -36,4 +48,9 @@ elementclass Client {
 
 	in_cl[1] -> [1]arpq;
 	in_cl[2] -> ip;
+
+	igmp::MembershipReportSender($address)
+		-> SetIPChecksum()
+		-> SetIGMPChecksum()
+		-> igmpClient
 }
