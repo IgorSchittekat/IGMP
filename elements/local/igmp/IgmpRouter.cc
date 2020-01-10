@@ -139,7 +139,6 @@ void IgmpRouter::isExclude(IPAddress client, IPAddress mult_addr) {
 }
 
 void IgmpRouter::toExclude(IPAddress client, IPAddress mult_addr) {
-    click_chatter("to_EX");
     if (groupsMap.find(client) == groupsMap.end()) {
         Vector<IgmpRouter::Group*>* newGroups = new Vector<IgmpRouter::Group*>();
         groupsMap.set(client, newGroups);

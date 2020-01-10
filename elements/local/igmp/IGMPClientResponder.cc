@@ -20,9 +20,7 @@ int IGMPClientResponder::configure(Vector <String> &conf, ErrorHandler *errh) {
 }
 
 void IGMPClientResponder::push(int port, Packet *p) {
-    //click_chatter("Got a packet of size %d , on port %d", p->length(), port);
     if (port == 0) {
-        //click_chatter("state change");
         auto iph = (click_ip *) p->data();
         auto ra = (RouterAlert *) (iph + 1);
         auto mr = (MembershipReport *) (ra + 1);
@@ -40,7 +38,6 @@ void IGMPClientResponder::push(int port, Packet *p) {
                     Timer *timer = new Timer(this);
                     timer->initialize(this);
                     auto num = click_random(1, 1 * 1000);
-                    //click_chatter("timer : %d", num);
                     timer->schedule_after_msec(num);
                     timers.find_insert(rec->MulticastAddress, timer);
                     Pair<Packet*, int> pair;
@@ -54,7 +51,6 @@ void IGMPClientResponder::push(int port, Packet *p) {
                 Timer *timer = new Timer(this);
                 timer->initialize(this);
                 auto num = click_random(1, 1 * 1000);
-                //click_chatter("timer : %d", num);
                 timer->schedule_after_msec(num);
                 timers.find_insert(rec->MulticastAddress, timer);
                 Pair<Packet*, int> pair;
@@ -75,24 +71,19 @@ void IGMPClientResponder::push(int port, Packet *p) {
         }
         output(1).push(p);
     } else {
-        //click_chatter("recieved packet");
         auto iph = (click_ip *) p->data();
         if(iph->ip_p == IP_PROTO_IGMP){
             iph->ip_id++;
-            //click_chatter("responding");
             auto ra = (RouterAlert *) (iph + 1);
             auto mq = (MembershipQuery *) (ra + 1);
             if (mq->Type == IGMP_QUERY_TYPE) {
                 uint16_t checksum = mq->Checksum;
                 mq->Checksum = 0;
-                // check is checksum is correct
                 if (checksum == click_in_cksum((unsigned char *) mq, p->length() - sizeof(click_ip) - sizeof(RouterAlert) )) {
                     auto num = click_random(1, mq->Max_respond_code * 100);
-                    //click_chatter("test");
                     Timer* generalTimer = new Timer(this);
                     generalTimer->initialize(this);
                     generalTimer->assign(this->timerCallback, this);
-                    click_chatter("generalTimer : %d", num);
                     generalTimer->schedule_after_msec(num);
                 }
             }
@@ -100,9 +91,7 @@ void IGMPClientResponder::push(int port, Packet *p) {
         else{
             auto iph = (click_ip *) p->data();
             IPAddress t = iph->ip_dst;
-            click_chatter(t.unparse().c_str());
             if(timers.count(iph->ip_dst) != 0){
-                click_chatter("accept");
                 output(2).push(p);
             }
             output(0).push(p);
@@ -121,26 +110,19 @@ void IGMPClientResponder::timerCallback(Timer* t, void* v) {
 
 void IGMPClientResponder::run_timer(Timer *timer) {
 
-    //  if(records.size() > 0 && timer == generalTimer){
-         //click_chatter("Timer");
-        //  output(1).push(make_packet());
-         //records.clear();
-    //  } else if(timer != generalTimer){
-         auto item = ressends.find(timer);
-         output(1).push(item->second.first->clone()->uniqueify());
-         if(item->second.second - 1 == 0){
-             ressends.erase(item);
-         }else{
-             auto num = click_random(1, 1 * 1000);
-             timer->reschedule_after_msec(num);
-             item->second.second--;
-         }
-    //  }
-     //timer->reschedule_after_msec(_time);
+    auto item = ressends.find(timer);
+    output(1).push(item->second.first->clone()->uniqueify());
+    if(item->second.second - 1 == 0){
+        ressends.erase(item);
+    }else{
+        auto num = click_random(1, 1 * 1000);
+        timer->reschedule_after_msec(num);
+        item->second.second--;
+    }
 }
 
 Packet *IGMPClientResponder::make_packet() {
-    int headroom = sizeof(click_ether);
+    int headroom = sizeof(click_ether) + 4;
     int numberOfGroupRecords = records.size();
 
     int size = sizeof(click_ip) + sizeof(MembershipReport) + sizeof(RouterAlert) +
