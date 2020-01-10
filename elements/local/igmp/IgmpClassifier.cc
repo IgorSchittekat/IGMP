@@ -2,7 +2,6 @@
 #include <click/args.hh>
 #include <click/error.hh>
 #include "IgmpClassifier.hh"
-#include "igmp.h"
 #include "click/timer.hh"
 #include "clicknet/ether.h"
 
